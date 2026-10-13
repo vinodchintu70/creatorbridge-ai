@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/context/AuthContext';
 import { invitationService } from '@/services/invitationService';
 import { InvitationWithDetails, InvitationStatus } from '@/types/invitation';
@@ -14,11 +15,14 @@ interface InvitationsDrawerProps {
   onOpenAuth?: () => void;
 }
 
+const emptySubscribe = () => () => {};
+
 export function InvitationsDrawer({
   isOpen,
   onClose,
   onOpenAuth,
 }: InvitationsDrawerProps) {
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const { user, profile, isAuthenticated } = useAuth();
   const [invitations, setInvitations] = useState<InvitationWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +72,16 @@ export function InvitationsDrawer({
     }
   }, [isOpen, isAuthenticated, loadInvitations]);
 
-  if (!isOpen) return null;
+  // Lock body scroll while open
+  useEffect(() => {
+    if (isOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = original || ''; };
+    }
+  }, [isOpen]);
+
+  if (!isClient || !isOpen) return null;
 
   const handleRespond = async (invitationId: string, newStatus: 'accepted' | 'declined') => {
     if (!user) return;
@@ -106,7 +119,7 @@ export function InvitationsDrawer({
 
   const pendingCount = invitations.filter((i) => i.status === 'pending').length;
 
-  return (
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-sm"
@@ -355,6 +368,7 @@ export function InvitationsDrawer({
           onRefreshInvitation={loadInvitations}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 }

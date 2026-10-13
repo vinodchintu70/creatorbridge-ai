@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { UserRole } from '@/types/invitation';
 import { TEST_ACCOUNTS } from '@/services/authService';
+
+const emptySubscribe = () => () => {};
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,6 +16,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const {
     user,
     profile,
@@ -34,7 +38,29 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Lock body scroll cleanly while open
+  useEffect(() => {
+    if (isOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = original || '';
+      };
+    }
+  }, [isOpen]);
+
+  if (!isClient || !isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +115,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
       role="dialog"
@@ -364,6 +390,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </Button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

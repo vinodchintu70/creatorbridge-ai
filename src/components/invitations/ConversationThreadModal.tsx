@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/context/AuthContext';
 import { InvitationWithDetails, InvitationMessage } from '@/types/invitation';
 import { invitationService } from '@/services/invitationService';
@@ -14,12 +15,15 @@ interface ConversationThreadModalProps {
   onRefreshInvitation?: () => void;
 }
 
+const emptySubscribe = () => () => {};
+
 export function ConversationThreadModal({
   invitation,
   isOpen,
   onClose,
   onRefreshInvitation,
 }: ConversationThreadModalProps) {
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const { user, profile } = useAuth();
   const [messages, setMessages] = useState<InvitationMessage[]>([]);
   const [inputContent, setInputContent] = useState('');
@@ -60,7 +64,16 @@ export function ConversationThreadModal({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  if (!isOpen || !invitation) return null;
+  // Lock body scroll while open
+  useEffect(() => {
+    if (isOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = original || ''; };
+    }
+  }, [isOpen]);
+
+  if (!isClient || !isOpen || !invitation) return null;
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +108,7 @@ export function ConversationThreadModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md"
       role="dialog"
@@ -281,6 +294,7 @@ export function ConversationThreadModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

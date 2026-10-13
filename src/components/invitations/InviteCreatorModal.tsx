@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Creator } from '@/types/creator';
@@ -19,6 +20,8 @@ interface InviteCreatorModalProps {
   onOpenAuth?: () => void;
 }
 
+const emptySubscribe = () => () => {};
+
 export function InviteCreatorModal({
   creator,
   isOpen,
@@ -26,6 +29,7 @@ export function InviteCreatorModal({
   onSuccess,
   onOpenAuth,
 }: InviteCreatorModalProps) {
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const { user, profile, isAuthenticated } = useAuth();
 
   const [briefs, setBriefs] = useState<BriefFormData[]>([]);
@@ -35,6 +39,24 @@ export function InviteCreatorModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (isOpen) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = original || ''; };
+    }
+  }, [isOpen]);
 
   // Load published briefs when modal opens
   useEffect(() => {
@@ -66,7 +88,7 @@ export function InviteCreatorModal({
     }
   }, [isOpen]);
 
-  if (!isOpen || !creator) return null;
+  if (!isClient || !isOpen || !creator) return null;
 
   const isBrand = isAuthenticated && profile?.role === 'brand';
   const selectedBrief = briefs.find((b) => b.id === selectedBriefId);
@@ -109,7 +131,7 @@ export function InviteCreatorModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
       role="dialog"
@@ -292,6 +314,7 @@ export function InviteCreatorModal({
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
