@@ -2,13 +2,20 @@
   "name": "creatorbridge-ai",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types tests/briefDefaultsAndValidation.test.ts && node --experimental-strip-types tests/provenanceClassification.test.ts && node --experimental-strip-types tests/creatorDiscoveryAndFiltering.test.ts && node --experimental-strip-types tests/domainAdapters.test.ts && node --experimental-strip-types tests/briefReconciliation.test.ts && node --experimental-strip-types tests/campaignsHub.test.ts && node --experimental-strip-types tests/modalUnstackingAndDeepLinking.test.ts && node --experimental-strip-types tests/creatorUrlState.test.ts && node --experimental-strip-types tests/briefRecommendations.test.ts && node --experimental-strip-types tests/invitationsAndMessaging.test.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
