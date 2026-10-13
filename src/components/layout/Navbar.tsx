@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [invitationsDrawerOpen, setInvitationsDrawerOpen] = useState(false);
   const [pendingInvitationsCount, setPendingInvitationsCount] = useState(0);
 
@@ -144,14 +145,20 @@ export function Navbar() {
                 <>
                   <button
                     type="button"
-                    onClick={() => setAuthModalOpen(true)}
+                    onClick={() => {
+                      setAuthModalMode('signin');
+                      setAuthModalOpen(true);
+                    }}
                     className="text-sm font-medium text-zinc-300 hover:text-white px-3 py-2 rounded-lg hover:bg-zinc-900/80 transition-colors cursor-pointer"
                   >
                     Sign In
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAuthModalOpen(true)}
+                    onClick={() => {
+                      setAuthModalMode('signup');
+                      setAuthModalOpen(true);
+                    }}
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-sm shadow-purple-500/25 transition-all duration-150 cursor-pointer"
                   >
                     Sign Up
@@ -226,6 +233,7 @@ export function Navbar() {
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
+                    setAuthModalMode('signin');
                     setAuthModalOpen(true);
                   }}
                   className="w-full text-center px-4 py-2.5 rounded-lg text-sm font-medium text-zinc-300 hover:text-white bg-zinc-900/90 border border-zinc-800 cursor-pointer"
@@ -241,6 +249,7 @@ export function Navbar() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
+        initialMode={authModalMode}
         onClose={() => setAuthModalOpen(false)}
       />
 
@@ -248,7 +257,10 @@ export function Navbar() {
       <InvitationsDrawer
         isOpen={invitationsDrawerOpen}
         onClose={() => setInvitationsDrawerOpen(false)}
-        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthModalMode('signin');
+          setAuthModalOpen(true);
+        }}
       />
     </>
   );

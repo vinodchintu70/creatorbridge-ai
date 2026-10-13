@@ -13,9 +13,10 @@ const emptySubscribe = () => () => {};
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMode?: 'signin' | 'signup';
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModalProps) {
   const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const {
     user,
@@ -27,7 +28,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     loginAsTestAccount,
   } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -37,6 +38,15 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Sync mode whenever opened with initialMode
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+    }
+  }, [isOpen, initialMode]);
 
   // Close on Escape key
   useEffect(() => {
